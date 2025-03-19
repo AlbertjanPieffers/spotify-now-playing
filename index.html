@@ -1,6 +1,11 @@
 <iframe id="spotifyFrame" width="50%" height="152" frameborder="0"
-        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
+        allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+        style="display: none;">
 </iframe>
+
+<p id="noMusicMessage" style="text-align: center; font-size: 18px; font-weight: bold;">
+    🎵 Er speelt momenteel geen muziek op Spotify 🎵
+</p>
 
 <script>
 const CLIENT_ID = "adfb40a14b7844eea65949e04c98fe11"; // Vervang met je Spotify Client ID
@@ -23,15 +28,31 @@ async function fetchSpotifyNowPlaying(token) {
         headers: { "Authorization": `Bearer ${token}` }
     });
 
-    if (!response.ok) {
-        console.error("Error fetching Spotify data");
+    if (!response.ok || response.status === 204) { // 204 betekent dat er geen muziek speelt
+        console.warn("Geen actieve muziek gevonden op Spotify!");
+        document.getElementById("spotifyFrame").style.display = "none";
+        document.getElementById("noMusicMessage").style.display = "block"; // Toon de melding
         return;
     }
 
-    const data = await response.json();
-    if (data && data.item) {
+    try {
+        const data = await response.json();
+
+        if (!data || !data.item) {
+            console.error("Geen nummer gevonden. Speelt er muziek?");
+            document.getElementById("spotifyFrame").style.display = "none";
+            document.getElementById("noMusicMessage").style.display = "block"; // Toon de melding
+            return;
+        }
+
         const trackId = data.item.id;
         document.getElementById("spotifyFrame").src = `https://open.spotify.com/embed/track/${trackId}`;
+        document.getElementById("spotifyFrame").style.display = "block"; // Toon de player
+        document.getElementById("noMusicMessage").style.display = "none"; // Verberg de melding
+    } catch (error) {
+        console.error("Fout bij het verwerken van de API-response:", error);
+        document.getElementById("spotifyFrame").style.display = "none";
+        document.getElementById("noMusicMessage").style.display = "block"; // Toon de melding
     }
 }
 
