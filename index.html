@@ -32,7 +32,8 @@ async function fetchSpotifyNowPlaying(token) {
             headers: { "Authorization": `Bearer ${token}` }
         });
 
-        if (response.status === 204 || response.status === 202 || !response.ok) {
+        // Check of de response leeg is
+        if (!response.ok || response.status === 204 || response.headers.get("content-length") === "0") {
             console.warn("Geen actieve muziek gevonden op Spotify!");
             document.getElementById("spotifyFrame").style.display = "none";
             document.getElementById("noMusicMessage").style.display = "block"; // Toon de melding
