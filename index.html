@@ -1,4 +1,4 @@
-<iframe id="spotifyFrame" width="100%" height="152" frameborder="0"
+<iframe id="spotifyFrame" width="50%" height="152" frameborder="0"
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         style="display: none;">
 </iframe>
@@ -8,34 +8,37 @@
 </p>
 
 <script>
-const CLIENT_ID = "adfb40a14b7844eea65949e04c98fe11"; // Vervang met je Spotify Client ID
-const REDIRECT_URI = "https://AlbertjanPieffers.github.io/spotify-now-playing/"; // Vervang met je redirect URL
+const CLIENT_ID = "adfb40a14b7844eea65949e04c98fe11"; // Vervang met je eigen Client ID
+const REDIRECT_URI = "https://AlbertjanPieffers.github.io/spotify-now-playing/"; // Pas dit aan naar jouw redirect URL
 const SCOPES = "user-read-currently-playing";
 
+// Haalt de access token op uit de URL
 function getAccessToken() {
     const urlParams = new URLSearchParams(window.location.hash.substr(1));
     return urlParams.get("access_token");
 }
 
+// Stuurt de gebruiker naar de Spotify autorisatiepagina
 function redirectToSpotifyAuth() {
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
     window.location.href = authUrl;
 }
 
+// Haalt de huidige muziekstatus op
 async function fetchSpotifyNowPlaying(token) {
-    const response = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
-        method: "GET",
-        headers: { "Authorization": `Bearer ${token}` }
-    });
-
-    if (!response.ok || response.status === 204) { // 204 betekent dat er geen muziek speelt
-        console.warn("Geen actieve muziek gevonden op Spotify!");
-        document.getElementById("spotifyFrame").style.display = "none";
-        document.getElementById("noMusicMessage").style.display = "block"; // Toon de melding
-        return;
-    }
-
     try {
+        const response = await fetch("https://api.spotify.com/v1/me/player/currently-playing", {
+            method: "GET",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (response.status === 204 || response.status === 202 || !response.ok) {
+            console.warn("Geen actieve muziek gevonden op Spotify!");
+            document.getElementById("spotifyFrame").style.display = "none";
+            document.getElementById("noMusicMessage").style.display = "block"; // Toon de melding
+            return;
+        }
+
         const data = await response.json();
 
         if (!data || !data.item) {
@@ -45,18 +48,19 @@ async function fetchSpotifyNowPlaying(token) {
             return;
         }
 
+        // Als er een track wordt afgespeeld, toon de Spotify player
         const trackId = data.item.id;
         document.getElementById("spotifyFrame").src = `https://open.spotify.com/embed/track/${trackId}`;
         document.getElementById("spotifyFrame").style.display = "block"; // Toon de player
         document.getElementById("noMusicMessage").style.display = "none"; // Verberg de melding
     } catch (error) {
-        console.error("Fout bij het verwerken van de API-response:", error);
+        console.error("Fout bij het ophalen van Spotify gegevens:", error);
         document.getElementById("spotifyFrame").style.display = "none";
         document.getElementById("noMusicMessage").style.display = "block"; // Toon de melding
     }
 }
 
-// 1. Check of er een access token is
+// Controleer of er een access token is
 let token = getAccessToken();
 
 if (!token) {
