@@ -30,9 +30,15 @@ async function fetchSpotifyNowPlaying(token) {
             headers: { "Authorization": `Bearer ${token}` }
         });
 
-        if (!response.ok) {
-            console.error("Error fetching Spotify data");
+        if (response.status === 401) { 
+            console.error("⚠️ Token verlopen of niet ingelogd. Toon inlogknop.");
             document.getElementById("spotifyLogin").style.display = "block"; // Toon inlogknop
+            return;
+        }
+
+        if (!response.ok) {
+            console.error("⚠️ Fout bij ophalen Spotify data. Geen muziek?");
+            document.getElementById("spotifyLogin").style.display = "none"; // Verberg inlogknop, want gebruiker is WEL ingelogd
             return;
         }
 
@@ -42,10 +48,11 @@ async function fetchSpotifyNowPlaying(token) {
             document.getElementById("spotifyFrame").src = `https://open.spotify.com/embed/track/${trackId}`;
             document.getElementById("spotifyLogin").style.display = "none"; // Verberg inlogknop als ingelogd
         } else {
-            document.getElementById("spotifyLogin").style.display = "block"; // Toon inlogknop
+            console.log("🎵 Geen muziek op dit moment.");
+            document.getElementById("spotifyLogin").style.display = "none"; // Geen muziek, maar WEL ingelogd
         }
     } catch (error) {
-        console.error("Fout bij ophalen Spotify data:", error);
+        console.error("❌ Fout bij ophalen Spotify data:", error);
         document.getElementById("spotifyLogin").style.display = "block"; // Toon inlogknop bij fout
     }
 }
