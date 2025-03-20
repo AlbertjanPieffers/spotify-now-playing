@@ -7,61 +7,17 @@
     🎵 Er speelt momenteel geen muziek op Spotify 🎵
 </p>
 
-<!-- Inlogknop -->
-<button id="spotifyLogin" style="display: none; background-color: #1DB954; color: white; 
-    border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; 
-    border-radius: 25px; cursor: pointer; margin-top: 20px;">
-    🔑 Inloggen bij Spotify
-</button>
+
 
 <script>
-// ✅ Functie om een cookie in te stellen
-function setCookie(name, value, days) {
-    let expires = "";
-    if (days) {
-        const date = new Date();
-        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-        expires = "; expires=" + date.toUTCString();
-    }
-    document.cookie = name + "=" + value + "; path=/" + expires;
-}
+const CLIENT_ID = "adfb40a14b7844eea65949e04c98fe11"; // Jouw Spotify Client ID
+const REDIRECT_URI = "https://AlbertjanPieffers.github.io/spotify-now-playing/"; // Jouw redirect URL
+const SCOPES = "user-read-currently-playing";
 
-// ✅ Functie om een cookie op te halen
-function getCookie(name) {
-    const cookies = document.cookie.split('; ');
-    for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].split('=');
-        if (cookie[0] === name) {
-            return cookie[1];
-        }
-    }
-    return null;
-}
-
-// ✅ Functie om de token op te halen en op te slaan in een cookie
+// ✅ Functie om de token op te halen
 function getAccessToken() {
     const urlParams = new URLSearchParams(window.location.hash.substr(1));
-    const token = urlParams.get("access_token");
-
-    if (token) {
-        console.log("✅ Nieuw Spotify-token ontvangen:", token);
-        setCookie("spotify_token", token, 1); // Token opslaan voor 1 dag
-        window.location.hash = ""; // Verwijder token uit URL voor een schonere URL
-        return token;
-    }
-
-    return getCookie("spotify_token"); // Ophalen van opgeslagen token
-}
-
-// ✅ Functie om door te sturen naar de Spotify inlogpagina
-function redirectToSpotifyAuth() {
-    console.log("🔑 Gebruiker klikt op de inlogknop. Doorsturen naar Spotify...");
-    const CLIENT_ID = "adfb40a14b7844eea65949e04c98fe11";
-    const REDIRECT_URI = "https://AlbertjanPieffers.github.io/spotify-now-playing/";
-    const SCOPES = "user-read-currently-playing";
-    
-    const authUrl = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
-    window.location.href = authUrl;
+    return urlParams.get("access_token");
 }
 
 // ✅ Functie om te checken of Spotify momenteel muziek afspeelt
@@ -76,17 +32,13 @@ async function fetchSpotifyNowPlaying(token) {
 
         console.log(`📡 Spotify API Response Status: ${response.status}`);
 
-        if (response.status === 401) { // Token is verlopen of gebruiker is niet ingelogd
-            console.error("⚠️ Token verlopen of gebruiker niet ingelogd. Inlogknop tonen.");
-            setCookie("spotify_token", "", -1); // Verwijder verlopen token
-            document.getElementById("spotifyLogin").style.display = "block";
-            document.getElementById("noMusicMessage").style.display = "none"; 
+        if (response.status === 401) { // Token verlopen of gebruiker niet ingelogd
+            console.error("⚠️ Token verlopen of gebruiker niet ingelogd.");
             return;
         }
 
         if (response.status === 204) { // Geen muziek speelt, maar gebruiker is WEL ingelogd
             console.log("🎵 Geen muziek speelt momenteel, maar gebruiker is ingelogd. Toon melding.");
-            document.getElementById("spotifyLogin").style.display = "none";
             document.getElementById("spotifyFrame").style.display = "none";
             document.getElementById("noMusicMessage").style.display = "block";
             return;
@@ -94,8 +46,6 @@ async function fetchSpotifyNowPlaying(token) {
 
         if (!response.ok) { // Andere fout
             console.error(`❌ Onverwachte fout bij ophalen Spotify data. Status: ${response.status}`);
-            document.getElementById("spotifyLogin").style.display = "block";
-            document.getElementById("noMusicMessage").style.display = "none";
             return;
         }
 
@@ -107,34 +57,25 @@ async function fetchSpotifyNowPlaying(token) {
             console.log(`🎶 Nummer gevonden: ${data.item.name} - Embed Track: ${trackId}`);
             document.getElementById("spotifyFrame").src = `https://open.spotify.com/embed/track/${trackId}`;
             document.getElementById("spotifyFrame").style.display = "block";
-            document.getElementById("spotifyLogin").style.display = "none";
             document.getElementById("noMusicMessage").style.display = "none";
         } else {
             console.warn("🎵 Geen nummer speelt momenteel, maar gebruiker is ingelogd.");
             document.getElementById("spotifyFrame").style.display = "none";
-            document.getElementById("spotifyLogin").style.display = "none";
             document.getElementById("noMusicMessage").style.display = "block";
         }
     } catch (error) {
         console.error("❌ Fout bij ophalen Spotify data:", error);
-        document.getElementById("spotifyLogin").style.display = "block";
-        document.getElementById("noMusicMessage").style.display = "none";
     }
 }
 
 // ✅ Token ophalen en checken
 let token = getAccessToken();
 
-if (!token) {
-    console.warn("⚠️ Geen Spotify token gevonden. Inlogknop wordt weergegeven.");
-    document.getElementById("spotifyLogin").style.display = "block";
-    document.getElementById("noMusicMessage").style.display = "none";
-} else {
+if (token) {
     console.log("✅ Token gevonden! Controleren of Spotify muziek afspeelt...");
     fetchSpotifyNowPlaying(token);
     setInterval(() => fetchSpotifyNowPlaying(token), 10000); // Update elke 10 seconden
+} else {
+    console.warn("⚠️ Geen Spotify token gevonden. Gebruiker moet inloggen.");
 }
-
-// ✅ Maak de inlogknop functioneel
-document.getElementById("spotifyLogin").addEventListener("click", redirectToSpotifyAuth);
 </script>
