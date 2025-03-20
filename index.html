@@ -19,20 +19,20 @@ const CLIENT_ID = "adfb40a14b7844eea65949e04c98fe11"; // Jouw Spotify Client ID
 const REDIRECT_URI = "https://AlbertjanPieffers.github.io/spotify-now-playing/"; // Jouw redirect URL
 const SCOPES = "user-read-currently-playing";
 
-// ✅ Token ophalen uit de URL
+// ✅ Functie om het token op te halen
 function getAccessToken() {
     const urlParams = new URLSearchParams(window.location.hash.substr(1));
     return urlParams.get("access_token");
 }
 
-// ✅ Doorsturen naar de Spotify inlogpagina
+// ✅ Functie om door te sturen naar de Spotify inlogpagina
 function redirectToSpotifyAuth() {
     console.log("🔑 Gebruiker klikt op de inlogknop. Doorsturen naar Spotify...");
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
     window.location.href = authUrl;
 }
 
-// ✅ Controleren of er muziek speelt
+// ✅ Functie om te checken of Spotify momenteel muziek afspeelt
 async function fetchSpotifyNowPlaying(token) {
     console.log("🔍 Controleren of Spotify momenteel muziek afspeelt...");
 
@@ -54,6 +54,7 @@ async function fetchSpotifyNowPlaying(token) {
         if (response.status === 204) { // Geen muziek speelt, maar gebruiker is WEL ingelogd
             console.log("🎵 Geen muziek speelt momenteel, maar gebruiker is ingelogd. Toon melding.");
             document.getElementById("spotifyLogin").style.display = "none"; // Verberg inlogknop
+            document.getElementById("spotifyFrame").style.display = "none"; // Verberg de iframe
             document.getElementById("noMusicMessage").style.display = "block"; // Toon "geen muziek speelt" melding
             return;
         }
@@ -72,10 +73,12 @@ async function fetchSpotifyNowPlaying(token) {
             const trackId = data.item.id;
             console.log(`🎶 Nummer gevonden: ${data.item.name} - Embed Track: ${trackId}`);
             document.getElementById("spotifyFrame").src = `https://open.spotify.com/embed/track/${trackId}`;
+            document.getElementById("spotifyFrame").style.display = "block"; // Zorg ervoor dat de iframe zichtbaar blijft
             document.getElementById("spotifyLogin").style.display = "none"; // Verberg inlogknop
             document.getElementById("noMusicMessage").style.display = "none"; // Verberg "geen muziek speelt" melding
         } else {
             console.warn("🎵 Geen nummer speelt momenteel, maar gebruiker is ingelogd.");
+            document.getElementById("spotifyFrame").style.display = "none"; // Verberg iframe als er geen muziek is
             document.getElementById("spotifyLogin").style.display = "none"; // Geen inlogknop nodig
             document.getElementById("noMusicMessage").style.display = "block"; // Toon "geen muziek speelt" melding
         }
