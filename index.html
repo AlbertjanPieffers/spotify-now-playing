@@ -1,4 +1,4 @@
-<iframe id="spotifyFrame" width="50%" height="152" frameborder="0"
+<iframe id="spotifyFrame" width="50%" height="120" frameborder="0"
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
 </iframe>
 
@@ -10,7 +10,7 @@
 <!-- Inlogknop -->
 <button id="spotifyLogin" style="display: none; background-color: #1DB954; color: white; 
     border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; 
-    border-radius: 25px; cursor: pointer; margin-top: 20px;">
+    border-radius: 25px; cursor: pointer; margin-top: 2px;">
     🔑 Inloggen bij Spotify
 </button>
 
@@ -22,7 +22,16 @@ const SCOPES = "user-read-currently-playing";
 // ✅ Functie om het token op te halen
 function getAccessToken() {
     const urlParams = new URLSearchParams(window.location.hash.substr(1));
-    return urlParams.get("access_token");
+    const token = urlParams.get("access_token");
+
+    if (token) {
+        console.log("✅ Nieuw Spotify-token ontvangen:", token);
+        localStorage.setItem("spotify_token", token); // Token opslaan in localStorage
+        window.location.hash = ""; // Verwijder token uit URL voor een schonere URL
+        return token;
+    }
+
+    return localStorage.getItem("spotify_token"); // Ophalen van opgeslagen token
 }
 
 // ✅ Functie om door te sturen naar de Spotify inlogpagina
@@ -46,23 +55,24 @@ async function fetchSpotifyNowPlaying(token) {
 
         if (response.status === 401) { // Token is verlopen of gebruiker is niet ingelogd
             console.error("⚠️ Token verlopen of gebruiker niet ingelogd. Inlogknop tonen.");
+            localStorage.removeItem("spotify_token"); // Verwijder verlopen token
             document.getElementById("spotifyLogin").style.display = "block";
-            document.getElementById("noMusicMessage").style.display = "none"; // Geen muziek melding verbergen
+            document.getElementById("noMusicMessage").style.display = "none"; 
             return;
         }
 
         if (response.status === 204) { // Geen muziek speelt, maar gebruiker is WEL ingelogd
             console.log("🎵 Geen muziek speelt momenteel, maar gebruiker is ingelogd. Toon melding.");
-            document.getElementById("spotifyLogin").style.display = "none"; // Verberg inlogknop
-            document.getElementById("spotifyFrame").style.display = "none"; // Verberg de iframe
-            document.getElementById("noMusicMessage").style.display = "block"; // Toon "geen muziek speelt" melding
+            document.getElementById("spotifyLogin").style.display = "none";
+            document.getElementById("spotifyFrame").style.display = "none";
+            document.getElementById("noMusicMessage").style.display = "block";
             return;
         }
 
         if (!response.ok) { // Andere fout
             console.error(`❌ Onverwachte fout bij ophalen Spotify data. Status: ${response.status}`);
-            document.getElementById("spotifyLogin").style.display = "block"; // Toon inlogknop bij fout
-            document.getElementById("noMusicMessage").style.display = "none"; // Geen muziek melding verbergen
+            document.getElementById("spotifyLogin").style.display = "block";
+            document.getElementById("noMusicMessage").style.display = "none";
             return;
         }
 
@@ -73,19 +83,19 @@ async function fetchSpotifyNowPlaying(token) {
             const trackId = data.item.id;
             console.log(`🎶 Nummer gevonden: ${data.item.name} - Embed Track: ${trackId}`);
             document.getElementById("spotifyFrame").src = `https://open.spotify.com/embed/track/${trackId}`;
-            document.getElementById("spotifyFrame").style.display = "block"; // Zorg ervoor dat de iframe zichtbaar blijft
-            document.getElementById("spotifyLogin").style.display = "none"; // Verberg inlogknop
-            document.getElementById("noMusicMessage").style.display = "none"; // Verberg "geen muziek speelt" melding
+            document.getElementById("spotifyFrame").style.display = "block";
+            document.getElementById("spotifyLogin").style.display = "none";
+            document.getElementById("noMusicMessage").style.display = "none";
         } else {
             console.warn("🎵 Geen nummer speelt momenteel, maar gebruiker is ingelogd.");
-            document.getElementById("spotifyFrame").style.display = "none"; // Verberg iframe als er geen muziek is
-            document.getElementById("spotifyLogin").style.display = "none"; // Geen inlogknop nodig
-            document.getElementById("noMusicMessage").style.display = "block"; // Toon "geen muziek speelt" melding
+            document.getElementById("spotifyFrame").style.display = "none";
+            document.getElementById("spotifyLogin").style.display = "none";
+            document.getElementById("noMusicMessage").style.display = "block";
         }
     } catch (error) {
         console.error("❌ Fout bij ophalen Spotify data:", error);
-        document.getElementById("spotifyLogin").style.display = "block"; // Toon inlogknop bij fout
-        document.getElementById("noMusicMessage").style.display = "none"; // Geen muziek melding verbergen
+        document.getElementById("spotifyLogin").style.display = "block";
+        document.getElementById("noMusicMessage").style.display = "none";
     }
 }
 
@@ -95,7 +105,7 @@ let token = getAccessToken();
 if (!token) {
     console.warn("⚠️ Geen Spotify token gevonden. Inlogknop wordt weergegeven.");
     document.getElementById("spotifyLogin").style.display = "block";
-    document.getElementById("noMusicMessage").style.display = "none"; // Geen muziek melding verbergen
+    document.getElementById("noMusicMessage").style.display = "none";
 } else {
     console.log("✅ Token gevonden! Controleren of Spotify muziek afspeelt...");
     fetchSpotifyNowPlaying(token);
