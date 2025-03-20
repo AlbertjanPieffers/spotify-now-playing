@@ -1,4 +1,4 @@
-<iframe id="spotifyFrame" width="50%" height="120" frameborder="0"
+<iframe id="spotifyFrame" width="50%" height="152" frameborder="0"
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture">
 </iframe>
 
@@ -10,33 +10,56 @@
 <!-- Inlogknop -->
 <button id="spotifyLogin" style="display: none; background-color: #1DB954; color: white; 
     border: none; padding: 10px 20px; font-size: 16px; font-weight: bold; 
-    border-radius: 25px; cursor: pointer; margin-top: 2px;">
+    border-radius: 25px; cursor: pointer; margin-top: 20px;">
     🔑 Inloggen bij Spotify
 </button>
 
 <script>
-const CLIENT_ID = "adfb40a14b7844eea65949e04c98fe11"; // Jouw Spotify Client ID
-const REDIRECT_URI = "https://AlbertjanPieffers.github.io/spotify-now-playing/"; // Jouw redirect URL
-const SCOPES = "user-read-currently-playing";
+// ✅ Functie om een cookie in te stellen
+function setCookie(name, value, days) {
+    let expires = "";
+    if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+    }
+    document.cookie = name + "=" + value + "; path=/" + expires;
+}
 
-// ✅ Functie om het token op te halen
+// ✅ Functie om een cookie op te halen
+function getCookie(name) {
+    const cookies = document.cookie.split('; ');
+    for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].split('=');
+        if (cookie[0] === name) {
+            return cookie[1];
+        }
+    }
+    return null;
+}
+
+// ✅ Functie om de token op te halen en op te slaan in een cookie
 function getAccessToken() {
     const urlParams = new URLSearchParams(window.location.hash.substr(1));
     const token = urlParams.get("access_token");
 
     if (token) {
         console.log("✅ Nieuw Spotify-token ontvangen:", token);
-        localStorage.setItem("spotify_token", token); // Token opslaan in localStorage
+        setCookie("spotify_token", token, 1); // Token opslaan voor 1 dag
         window.location.hash = ""; // Verwijder token uit URL voor een schonere URL
         return token;
     }
 
-    return localStorage.getItem("spotify_token"); // Ophalen van opgeslagen token
+    return getCookie("spotify_token"); // Ophalen van opgeslagen token
 }
 
 // ✅ Functie om door te sturen naar de Spotify inlogpagina
 function redirectToSpotifyAuth() {
     console.log("🔑 Gebruiker klikt op de inlogknop. Doorsturen naar Spotify...");
+    const CLIENT_ID = "adfb40a14b7844eea65949e04c98fe11";
+    const REDIRECT_URI = "https://AlbertjanPieffers.github.io/spotify-now-playing/";
+    const SCOPES = "user-read-currently-playing";
+    
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${CLIENT_ID}&response_type=token&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${encodeURIComponent(SCOPES)}`;
     window.location.href = authUrl;
 }
@@ -55,7 +78,7 @@ async function fetchSpotifyNowPlaying(token) {
 
         if (response.status === 401) { // Token is verlopen of gebruiker is niet ingelogd
             console.error("⚠️ Token verlopen of gebruiker niet ingelogd. Inlogknop tonen.");
-            localStorage.removeItem("spotify_token"); // Verwijder verlopen token
+            setCookie("spotify_token", "", -1); // Verwijder verlopen token
             document.getElementById("spotifyLogin").style.display = "block";
             document.getElementById("noMusicMessage").style.display = "none"; 
             return;
