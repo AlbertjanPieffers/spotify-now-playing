@@ -70,7 +70,8 @@ async function fetchSpotifyNowPlaying(token) {
         document.getElementById("noMusicMessage").style.display = "block"; // Toon de melding
     }
 }
-
+//Debug
+        console.log("URL hash is:", window.location.hash);
 // Controleer of er een access token is
 let token = getAccessToken();
 
@@ -81,3 +82,5 @@ if (!token) {
     setInterval(() => fetchSpotifyNowPlaying(token), 10000); // Update elke 10 seconden
 }
 </script>
+
+
